@@ -3,7 +3,7 @@ class PagesController < ApplicationController
   end
 
   def health
-    render json: { status: "OK", timestamp: Time.now.utc } 
+    render json: { status: "OK", timestamp: Time.now.utc }
   end
 
   def version
