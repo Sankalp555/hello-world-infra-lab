@@ -1,0 +1,95 @@
+# push / pull request
+#         ↓
+# GitHub starts Ubuntu runner
+#         ↓
+# PostgreSQL service starts
+#         ↓
+# Ruby is installed
+#         ↓
+# Gems are installed from Gemfile.lock
+#         ↓
+# Test database is prepared
+#         ↓
+# RSpec runs
+#         ↓
+# RuboCop runs
+#         ↓
+# Brakeman runs
+
+#===================================
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    name: Test, lint, and scan
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      RAILS_ENV: test
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/hello_world_test
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: 3.3.4
+          bundler-cache: true
+
+      - name: Prepare database
+        run: bin/rails db:prepare
+
+      - name: Run RSpec
+        run: bundle exec rspec
+
+      - name: Run RuboCop
+        run: bundle exec rubocop
+
+      - name: Run Brakeman
+        run: bundle exec brakeman --no-pager
+
+
+# ===============================================
+
+# Create a fresh temporary machine
+#         ↓
+# Download your code
+#         ↓
+# Install the correct Ruby version
+#         ↓
+# Install app dependencies from Gemfile.lock
+#         ↓
+# Start required external services, here PostgreSQL
+#         ↓
+# Prepare the test database
+#         ↓
+# Run automated checks
+
+# HTTP       → 80
+# HTTPS      → 443
+# SSH        → 22
+# PostgreSQL → 5432
+# Redis      → 6379
+# MySQL      → 3306
