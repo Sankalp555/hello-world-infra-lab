@@ -23,7 +23,7 @@ RSpec.describe "Pages", type: :request do
       get "/version"
       expect(response).to have_http_status(:success)
       json = JSON.parse(response.body)
-      expect(json["version"]).to eq("1.0.0")
+      expect(json["version"]).to eq("2.0.0")
     end
   end
 end
