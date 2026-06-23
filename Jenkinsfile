@@ -3,6 +3,7 @@ pipeline {
 
   environment {
     RAILS_ENV = 'test'
+    RVM_RUBY = 'source /var/lib/jenkins/.rvm/scripts/rvm && rvm use 3.3.4 --default'
   }
 
   stages {
@@ -14,33 +15,33 @@ pipeline {
 
     stage('Install dependencies') {
       steps {
-        sh 'ruby -v'
-        sh 'bundle -v'
-        sh 'bundle install'
+        sh 'bash -lc "$RVM_RUBY && ruby -v"'
+        sh 'bash -lc "$RVM_RUBY && bundle -v"'
+        sh 'bash -lc "$RVM_RUBY && bundle install"'
       }
     }
 
     stage('Prepare database') {
       steps {
-        sh 'bin/rails db:prepare'
+        sh 'bash -lc "$RVM_RUBY && bin/rails db:prepare"'
       }
     }
 
     stage('Run RSpec') {
       steps {
-        sh 'bundle exec rspec'
+        sh 'bash -lc "$RVM_RUBY && bundle exec rspec"'
       }
     }
 
     stage('Run RuboCop') {
       steps {
-        sh 'bundle exec rubocop'
+        sh 'bash -lc "$RVM_RUBY && bundle exec rubocop"'
       }
     }
 
     stage('Run Brakeman') {
       steps {
-        sh 'bundle exec brakeman --no-pager'
+        sh 'bash -lc "$RVM_RUBY && bundle exec brakeman --no-pager"'
       }
     }
   }
