@@ -4,6 +4,12 @@ set -euo pipefail
 # 1. Define variables
 APP_PATH="/home/ubuntu/hello-world-infra-lab"
 
+# 2. Load RVM (Required for non-interactive shells like GitHub Actions)
+if [ -f "$HOME/.rvm/scripts/rvm" ]; then
+  echo "Loading RVM..."
+  source "$HOME/.rvm/scripts/rvm"
+fi
+
 echo "--- Starting Deployment ---"
 
 # 2. Go to app folder

@@ -3,6 +3,12 @@ set -euo pipefail
 
 # 1. Define variables
 APP_PATH="/home/ubuntu/hello-world-infra-lab"
+
+# 2. Load RVM (Required for non-interactive shells like GitHub Actions)
+if [ -f "$HOME/.rvm/scripts/rvm" ]; then
+  source "$HOME/.rvm/scripts/rvm"
+fi
+
 BACKUP_PATH="${APP_PATH}/backups"
 TIMESTAMP=$(date +%Y-%m-%d_%H-%M-%S)
 DATABASE_NAME="hello_world_production"
