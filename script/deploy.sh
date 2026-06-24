@@ -9,7 +9,11 @@ echo "--- Starting Deployment ---"
 # 2. Go to app folder
 cd "$APP_PATH"
 
-# 3. Load environment variables if they exist
+# 3. Perform pre-deployment backup
+echo "Taking pre-deployment backup..."
+./script/backup_db.sh
+
+# 4. Load environment variables if they exist
 if [ -f .env.production ]; then
   echo "Loading environment variables from .env.production..."
   export $(grep -v '^#' .env.production | xargs)
