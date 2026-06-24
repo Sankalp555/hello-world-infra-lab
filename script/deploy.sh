@@ -14,10 +14,9 @@ cd "$APP_PATH"
 echo "Pulling latest code from GitHub..."
 git pull
 
-# 4. Load environment variables
+# 4. Load environment variables for the script's own use (like backup)
 if [ -f .env.production ]; then
   echo "Loading environment variables from .env.production..."
-  # This exports all variables in the file
   export $(grep -v '^#' .env.production | xargs)
 else
   echo "ERROR: .env.production not found!"
@@ -32,13 +31,14 @@ echo "Taking pre-deployment backup..."
 echo "Installing gems..."
 $RVM_DO bundle install
 
-# 7. Database migrations
+# 7. Database migrations (Direct Injection Method)
 echo "Running migrations..."
-RAILS_ENV=production HELLO_WORLD_DATABASE_PASSWORD="$HELLO_WORLD_DATABASE_PASSWORD" $RVM_DO bin/rails db:migrate
+# We use 'env' to pass the variables directly into the RVM-wrapped command
+$RVM_DO env RAILS_ENV=production HELLO_WORLD_DATABASE_PASSWORD="$HELLO_WORLD_DATABASE_PASSWORD" bundle exec rails db:migrate
 
 # 8. Precompile assets
 echo "Precompiling assets..."
-RAILS_ENV=production $RVM_DO bin/rails assets:precompile
+$RVM_DO env RAILS_ENV=production bundle exec rails assets:precompile
 
 # 9. Restart services
 echo "Restarting services..."
