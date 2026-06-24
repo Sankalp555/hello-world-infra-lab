@@ -10,19 +10,20 @@ echo "--- Starting Deployment ---"
 # 2. Go to app folder
 cd "$APP_PATH"
 
-# 3. Perform pre-deployment backup
+# 3. Pull latest code FIRST
+# This ensures we use the latest versions of deployment scripts
+echo "Pulling latest code from GitHub..."
+git pull
+
+# 4. Perform pre-deployment backup
 echo "Taking pre-deployment backup..."
 ./script/backup_db.sh
 
-# 4. Load environment variables if they exist
+# 5. Load environment variables if they exist
 if [ -f .env.production ]; then
   echo "Loading environment variables from .env.production..."
   export $(grep -v '^#' .env.production | xargs)
 fi
-
-# 5. Pull latest code
-echo "Pulling latest code from GitHub..."
-git pull
 
 # 6. Install dependencies
 echo "Installing gems..."
