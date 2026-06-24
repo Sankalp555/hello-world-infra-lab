@@ -3,12 +3,7 @@ set -euo pipefail
 
 # 1. Define variables
 APP_PATH="/home/ubuntu/hello-world-infra-lab"
-
-# 2. Load RVM (Required for non-interactive shells like GitHub Actions)
-if [ -f "$HOME/.rvm/scripts/rvm" ]; then
-  echo "Loading RVM..."
-  source "$HOME/.rvm/scripts/rvm"
-fi
+RVM_DO="/home/ubuntu/.rvm/bin/rvm 3.3.4 do"
 
 echo "--- Starting Deployment ---"
 
@@ -25,31 +20,31 @@ if [ -f .env.production ]; then
   export $(grep -v '^#' .env.production | xargs)
 fi
 
-# 4. Pull latest code
+# 5. Pull latest code
 echo "Pulling latest code from GitHub..."
 git pull
 
-# 5. Install dependencies
+# 6. Install dependencies
 echo "Installing gems..."
-bundle install
+$RVM_DO bundle install
 
-# 6. Database migrations
+# 7. Database migrations
 echo "Running migrations..."
-RAILS_ENV=production bin/rails db:migrate
+$RVM_DO bin/rails db:migrate
 
-# 7. Precompile assets
+# 8. Precompile assets
 echo "Precompiling assets..."
-RAILS_ENV=production bin/rails assets:precompile
+$RVM_DO bin/rails assets:precompile
 
-# 8. Restart services
+# 9. Restart services
 echo "Restarting services..."
 ./script/restart_services.sh
 
-# 9. Wait for app to boot
+# 10. Wait for app to boot
 echo "Waiting 5 seconds for application to boot..."
 sleep 5
 
-# 10. Health check
+# 11. Health check
 echo "Verifying deployment..."
 ./script/health_check.sh
 

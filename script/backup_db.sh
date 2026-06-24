@@ -3,12 +3,7 @@ set -euo pipefail
 
 # 1. Define variables
 APP_PATH="/home/ubuntu/hello-world-infra-lab"
-
-# 2. Load RVM (Required for non-interactive shells like GitHub Actions)
-if [ -f "$HOME/.rvm/scripts/rvm" ]; then
-  source "$HOME/.rvm/scripts/rvm"
-fi
-
+RVM_DO="/home/ubuntu/.rvm/bin/rvm 3.3.4 do"
 BACKUP_PATH="${APP_PATH}/backups"
 TIMESTAMP=$(date +%Y-%m-%d_%H-%M-%S)
 DATABASE_NAME="hello_world_production"
@@ -26,7 +21,6 @@ if [ -f "${APP_PATH}/.env.production" ]; then
 fi
 
 # 4. Perform backup using pg_dump
-# PGPASSWORD is a special env var that pg_dump looks for
 echo "Creating backup: ${BACKUP_FILE}"
 PGPASSWORD="${HELLO_WORLD_DATABASE_PASSWORD}" pg_dump -h localhost -U hello_world "$DATABASE_NAME" > "$BACKUP_FILE"
 
