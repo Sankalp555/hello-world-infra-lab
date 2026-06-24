@@ -35,7 +35,11 @@ RAILS_ENV=production bin/rails assets:precompile
 echo "Restarting services..."
 ./script/restart_services.sh
 
-# 9. Health check
+# 9. Wait for app to boot
+echo "Waiting 5 seconds for application to boot..."
+sleep 5
+
+# 10. Health check
 echo "Verifying deployment..."
 ./script/health_check.sh
 
