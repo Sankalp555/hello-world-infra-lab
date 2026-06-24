@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -eo pipefail
 
 # 1. Define variables
 APP_PATH="/home/ubuntu/hello-world-infra-lab"
