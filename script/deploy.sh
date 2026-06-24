@@ -14,17 +14,19 @@ cd "$APP_PATH"
 echo "Pulling latest code from GitHub..."
 git pull
 
-# 4. Perform pre-deployment backup
-echo "Taking pre-deployment backup..."
-./script/backup_db.sh
-
-# 5. Load environment variables if they exist
+# 4. Load environment variables
 if [ -f .env.production ]; then
   echo "Loading environment variables from .env.production..."
-  set -a
-  source .env.production
-  set +a
+  # This exports all variables in the file
+  export $(grep -v '^#' .env.production | xargs)
+else
+  echo "ERROR: .env.production not found!"
+  exit 1
 fi
+
+# 5. Perform pre-deployment backup
+echo "Taking pre-deployment backup..."
+./script/backup_db.sh
 
 # 6. Install dependencies
 echo "Installing gems..."
@@ -32,11 +34,11 @@ $RVM_DO bundle install
 
 # 7. Database migrations
 echo "Running migrations..."
-$RVM_DO bin/rails db:migrate
+RAILS_ENV=production HELLO_WORLD_DATABASE_PASSWORD="$HELLO_WORLD_DATABASE_PASSWORD" $RVM_DO bin/rails db:migrate
 
 # 8. Precompile assets
 echo "Precompiling assets..."
-$RVM_DO bin/rails assets:precompile
+RAILS_ENV=production $RVM_DO bin/rails assets:precompile
 
 # 9. Restart services
 echo "Restarting services..."
