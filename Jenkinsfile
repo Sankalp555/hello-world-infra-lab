@@ -4,6 +4,7 @@ pipeline {
   environment {
     RAILS_ENV = 'test'
     RVM_RUBY = 'source /var/lib/jenkins/.rvm/scripts/rvm && rvm use 3.3.4 --default'
+    EC2_HOST = '13.233.90.198'
   }
 
   stages {
@@ -42,6 +43,17 @@ pipeline {
     stage('Run Brakeman') {
       steps {
         sh 'bash -lc "$RVM_RUBY && bundle exec brakeman --no-pager"'
+      }
+    }
+
+    stage('Deploy to EC2') {
+      when {
+        branch 'main'
+      }
+      steps {
+        sshagent(['ec2-ssh-key']) {
+          sh "ssh -o StrictHostKeyChecking=no ubuntu@${EC2_HOST} 'cd ~/hello-world-infra-lab && ./script/deploy.sh'"
+        }
       }
     }
   }
