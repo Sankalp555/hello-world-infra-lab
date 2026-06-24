@@ -48,7 +48,12 @@ pipeline {
 
     stage('Deploy to EC2') {
       when {
-        branch 'main'
+        anyOf {
+          branch 'main'
+          expression { env.BRANCH_NAME == 'main' }
+          expression { env.GIT_BRANCH == 'origin/main' }
+          expression { env.GIT_BRANCH == 'main' }
+        }
       }
       steps {
         sshagent(['ec2-ssh-key']) {
