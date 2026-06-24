@@ -11,7 +11,6 @@ echo "--- Starting Deployment ---"
 cd "$APP_PATH"
 
 # 3. Pull latest code FIRST
-# This ensures we use the latest versions of deployment scripts
 echo "Pulling latest code from GitHub..."
 git pull
 
@@ -22,7 +21,9 @@ echo "Taking pre-deployment backup..."
 # 5. Load environment variables if they exist
 if [ -f .env.production ]; then
   echo "Loading environment variables from .env.production..."
-  export $(grep -v '^#' .env.production | xargs)
+  set -a
+  source .env.production
+  set +a
 fi
 
 # 6. Install dependencies
