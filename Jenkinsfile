@@ -4,7 +4,7 @@ pipeline {
   environment {
     RAILS_ENV = 'test'
     RVM_RUBY = 'source /var/lib/jenkins/.rvm/scripts/rvm && rvm use 3.3.4 --default'
-    EC2_HOST = '13.233.90.198'
+    EC2_HOST = '13.207.200.211'
   }
 
   stages {
