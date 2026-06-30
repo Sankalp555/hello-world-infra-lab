@@ -21,3 +21,9 @@ variable "key_name" {
   type        = string
   default     = "aws-key"
 }
+
+variable "domain_name" {
+  description = "The domain name for the application"
+  type        = string
+  default     = "workorn.com"
+}

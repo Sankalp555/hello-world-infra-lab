@@ -2,10 +2,7 @@ pipeline {
   agent any
 
   options {
-    // Jenkins equivalent to GitHub's concurrency:
-    // Prevents multiple builds from running at the same time and stepping on each other.
     disableConcurrentBuilds()
-    // Keeps the build history clean
     buildDiscarder(logRotator(numToKeepStr: '10'))
   }
 
@@ -13,50 +10,12 @@ pipeline {
     RAILS_ENV = 'test'
     RVM_RUBY = 'source /var/lib/jenkins/.rvm/scripts/rvm && rvm use 3.3.4 --default'
     EC2_HOST = '13.207.119.208'
-    // AWS Region for Terraform
-    AWS_DEFAULT_REGION = 'ap-south-1'
   }
 
   stages {
     stage('Checkout') {
       steps {
         checkout scm
-      }
-    }
-
-    stage('Infrastructure (Terraform)') {
-      // Only run if files in terraform-lab folder changed
-      when { changeset "terraform-lab/**" }
-      steps {
-        // Uses Jenkins Secret Text credentials for AWS keys
-        withCredentials([
-          string(credentialsId: 'aws-access-key', variable: 'AWS_ACCESS_KEY_ID'),
-          string(credentialsId: 'AWS_SECRET_ACCESS_KEY', variable: 'AWS_SECRET_ACCESS_KEY')
-        ]) {
-          dir('terraform-lab') {
-            sh 'terraform init'
-            sh 'terraform apply -auto-approve'
-          }
-        }
-      }
-    }
-
-    stage('Configuration (Ansible)') {
-      // Run if ansible files OR terraform files changed (since infra change needs re-config)
-      when {
-        anyOf {
-          changeset "ansible/**"
-          changeset "terraform-lab/**"
-        }
-      }
-      steps {
-        // Uses the SSH key stored in Jenkins credentials
-        sshagent(['ec2-ssh-key']) {
-          dir('ansible') {
-            // Jenkins provides the key via the SSH_AUTH_SOCK or temporary file
-            sh "ansible-playbook -i inventory.ini playbook.yml -e 'ansible_ssh_common_args=\"-o StrictHostKeyChecking=no\"'"
-          }
-        }
       }
     }
 

@@ -60,3 +60,10 @@ resource "aws_eip" "app_eip" {
     Name = "Rails-Prod-EIP"
   }
 }
+
+# 4. DNS and SSL Module
+module "dns" {
+  source      = "./modules/dns"
+  domain_name = var.domain_name
+  ip_address  = aws_eip.app_eip.public_ip
+}
