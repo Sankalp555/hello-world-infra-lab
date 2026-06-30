@@ -10,6 +10,25 @@
 # Ignore all environment files.
 /.env*
 
+# Infrastructure
+.terraform/
+*.tfstate
+*.tfstate.backup
+.terraform.lock.hcl
+*.pem
+aws-key*
+ansible/*.retry
+cdk.out/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+aws-env/
+venv/
+ENV/
+
 # Ignore all logfiles and tempfiles.
 /log/*
 /tmp/*

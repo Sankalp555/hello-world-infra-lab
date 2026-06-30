@@ -1,0 +1,6 @@
+Resources:
+  MyLabBucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      # Bucket names must be unique. We use the AccountId to help with this.
+      BucketName: !Sub 'cloudformation-lab-sankalp-${AWS::AccountId}'
