@@ -31,7 +31,7 @@ pipeline {
         // Uses Jenkins Secret Text credentials for AWS keys
         withCredentials([
           string(credentialsId: 'aws-access-key', variable: 'AWS_ACCESS_KEY_ID'),
-          string(credentialsId: 'aws-secret-key', variable: 'AWS_SECRET_ACCESS_KEY')
+          string(credentialsId: 'AWS_SECRET_ACCESS_KEY', variable: 'AWS_SECRET_ACCESS_KEY')
         ]) {
           dir('terraform-lab') {
             sh 'terraform init'
