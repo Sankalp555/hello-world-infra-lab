@@ -1,0 +1,54 @@
+pipeline {
+  agent any
+
+  options {
+    disableConcurrentBuilds()
+    buildDiscarder(logRotator(numToKeepStr: '10'))
+  }
+
+  environment {
+    // AWS Region for Terraform
+    AWS_DEFAULT_REGION = 'ap-south-1'
+  }
+
+  stages {
+    stage('Checkout') {
+      steps {
+        checkout scm
+      }
+    }
+
+    stage('Infrastructure (Terraform)') {
+      // Only run if files in terraform-lab folder changed
+      when { changeset "terraform-lab/**" }
+      steps {
+        withCredentials([
+          string(credentialsId: 'aws-access-key', variable: 'AWS_ACCESS_KEY_ID'),
+          string(credentialsId: 'AWS_SECRET_ACCESS_KEY', variable: 'AWS_SECRET_ACCESS_KEY')
+        ]) {
+          dir('terraform-lab') {
+            sh 'terraform init'
+            sh 'terraform apply -auto-approve'
+          }
+        }
+      }
+    }
+
+    stage('Configuration (Ansible)') {
+      // Run if ansible files OR terraform files changed
+      when {
+        anyOf {
+          changeset "ansible/**"
+          changeset "terraform-lab/**"
+        }
+      }
+      steps {
+        sshagent(['ec2-ssh-key']) {
+          dir('ansible') {
+            sh "ansible-playbook -i inventory.ini playbook.yml -e 'ansible_ssh_common_args=\"-o StrictHostKeyChecking=no\"'"
+          }
+        }
+      }
+    }
+  }
+}
