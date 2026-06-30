@@ -45,7 +45,7 @@ module "my_web_server" {
 
   ami_id               = data.aws_ami.ubuntu.id
   instance_type        = var.instance_type
-  server_name          = "Rails-Prod-Lab"
+  server_name          = "Rails-Prod-Lab-V2"
   key_name             = var.key_name
   sg_name              = var.sg_name
   iam_instance_profile = module.iam.instance_profile_name
