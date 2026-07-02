@@ -2,6 +2,10 @@
 resource "aws_route53_zone" "main" {
   name = var.domain_name
 
+  lifecycle {
+    prevent_destroy = true
+  }
+
   tags = {
     Name = "Main Hosted Zone"
   }
@@ -18,6 +22,7 @@ resource "aws_acm_certificate" "cert" {
 
   lifecycle {
     create_before_destroy = true
+    prevent_destroy       = true
   }
 
   tags = {
