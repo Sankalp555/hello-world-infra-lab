@@ -63,6 +63,8 @@
       args:
         creates: /home/ubuntu/.rvm/rubies/ruby-3.3.4
       become_user: ubuntu
+      async: 1800
+      poll: 30
 
     - name: Create application directory
       file:
