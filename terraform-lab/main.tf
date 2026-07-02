@@ -19,6 +19,18 @@ provider "aws" {
   region = var.aws_region
 }
 
+# Data sources for Network
+data "aws_vpc" "default" {
+  default = true
+}
+
+data "aws_subnets" "default" {
+  filter {
+    name   = "vpc-id"
+    values = [data.aws_vpc.default.id]
+  }
+}
+
 # Data source for AMI
 data "aws_ami" "ubuntu" {
   most_recent = true
@@ -33,25 +45,73 @@ data "aws_ami" "ubuntu" {
   owners = ["099720109477"] # Canonical
 }
 
-# 1. IAM Module - Creates the "Identity" for the server
+# 1. IAM Module
 module "iam" {
   source      = "./modules/iam"
   name_prefix = "rails-lab"
 }
 
-# 2. Web Server Module - Creates the "Hardware" and "Security"
+# 2. DNS and SSL Module (Foundation for Security)
+module "dns" {
+  source      = "./modules/dns"
+  domain_name = var.domain_name
+}
+
+# 3. ALB Module (Front Door)
+module "alb" {
+  source          = "./modules/alb"
+  name_prefix     = "rails-lab"
+  vpc_id          = data.aws_vpc.default.id
+  public_subnets  = data.aws_subnets.default.ids
+  certificate_arn = module.dns.certificate_arn
+}
+
+# 4. Web Server Module (Compute)
 module "my_web_server" {
   source = "./modules/web_server"
 
-  ami_id               = data.aws_ami.ubuntu.id
-  instance_type        = var.instance_type
-  server_name          = "Rails-Prod-Lab-V2"
-  key_name             = var.key_name
-  sg_name              = var.sg_name
-  iam_instance_profile = module.iam.instance_profile_name
+  ami_id                = data.aws_ami.ubuntu.id
+  instance_type         = var.instance_type
+  server_name           = "Rails-Prod-Lab-V2"
+  key_name              = var.key_name
+  sg_name               = var.sg_name
+  iam_instance_profile  = module.iam.instance_profile_name
+  alb_security_group_id = module.alb.alb_security_group_id
 }
 
-# 3. Elastic IP - Gives the server a permanent "Phone Number"
+# 5. Target Group Attachment (Connecting ALB to EC2)
+resource "aws_lb_target_group_attachment" "this" {
+  target_group_arn = module.alb.target_group_arn
+  target_id        = module.my_web_server.instance_id
+  port             = 80
+}
+
+# 6. Route 53 Records (Identity pointing to Front Door)
+resource "aws_route53_record" "root" {
+  zone_id = module.dns.zone_id
+  name    = var.domain_name
+  type    = "A"
+
+  alias {
+    name                   = module.alb.alb_dns_name
+    zone_id                = module.alb.alb_zone_id
+    evaluate_target_health = false
+  }
+}
+
+resource "aws_route53_record" "www" {
+  zone_id = module.dns.zone_id
+  name    = "www.${var.domain_name}"
+  type    = "A"
+
+  alias {
+    name                   = module.alb.alb_dns_name
+    zone_id                = module.alb.alb_zone_id
+    evaluate_target_health = false
+  }
+}
+
+# 7. Elastic IP (For Management Access)
 resource "aws_eip" "app_eip" {
   instance = module.my_web_server.instance_id
   domain   = "vpc"
@@ -59,11 +119,4 @@ resource "aws_eip" "app_eip" {
   tags = {
     Name = "Rails-Prod-EIP"
   }
-}
-
-# 4. DNS and SSL Module
-module "dns" {
-  source      = "./modules/dns"
-  domain_name = var.domain_name
-  ip_address  = aws_eip.app_eip.public_ip
 }

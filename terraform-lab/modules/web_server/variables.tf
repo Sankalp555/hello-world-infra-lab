@@ -30,3 +30,9 @@ variable "sg_name" {
   type        = string
   default     = "web-server-sg"
 }
+
+variable "alb_security_group_id" {
+  description = "The ID of the ALB security group to allow traffic from"
+  type        = string
+  default     = ""
+}

@@ -8,6 +8,11 @@ output "instance_public_ip" {
   value       = aws_eip.app_eip.public_ip
 }
 
+output "alb_dns_name" {
+  description = "The DNS name of the ALB"
+  value       = module.alb.alb_dns_name
+}
+
 output "name_servers" {
   description = "The name servers for the Hosted Zone"
   value       = module.dns.name_servers

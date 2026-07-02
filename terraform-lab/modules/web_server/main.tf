@@ -2,11 +2,13 @@ resource "aws_security_group" "this" {
   name        = var.sg_name
   description = "Security group for web server"
 
+  # HTTP from ALB or anywhere
   ingress {
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    from_port       = 80
+    to_port         = 80
+    protocol        = "tcp"
+    cidr_blocks     = var.alb_security_group_id == "" ? ["0.0.0.0/0"] : null
+    security_groups = var.alb_security_group_id == "" ? null : [var.alb_security_group_id]
   }
 
   ingress {
@@ -16,12 +18,13 @@ resource "aws_security_group" "this" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  # Added Port 3000 for Rails (Puma)
+  # Port 3000 from ALB or anywhere
   ingress {
-    from_port   = 3000
-    to_port     = 3000
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    from_port       = 3000
+    to_port         = 3000
+    protocol        = "tcp"
+    cidr_blocks     = var.alb_security_group_id == "" ? ["0.0.0.0/0"] : null
+    security_groups = var.alb_security_group_id == "" ? null : [var.alb_security_group_id]
   }
 
   egress {
