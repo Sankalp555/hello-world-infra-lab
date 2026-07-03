@@ -140,19 +140,15 @@
           [Unit]
           Description=Rails Hello World Production Lab
           After=network.target postgresql.service
-
           [Service]
           Type=simple
           User=ubuntu
           Group=ubuntu
           WorkingDirectory=/home/ubuntu/hello-world-infra-lab
-          Environment="HELLO_WORLD_DATABASE_PASSWORD=hello_world_123"
-          Environment="RAILS_ENV=production"
-          Environment="RAILS_SERVE_STATIC_FILES=true"
-          Environment="SECRET_KEY_BASE=489eeb8eee1b0292460448f56c54fbc5771a076caf19de1bf91ab7d4d93d1460788cf8029573b2d64b39ea0866b1026e906de222e97dd866ea4230ec1d6a4adf"
+          # Replace the hardcoded Environment= lines with this:
+          EnvironmentFile=/home/ubuntu/hello-world-infra-lab/.env.production
           ExecStart=/home/ubuntu/.rvm/bin/rvm 3.3.4 do bundle exec puma -C config/puma.rb
           Restart=always
-
           [Install]
           WantedBy=multi-user.target
         dest: /etc/systemd/system/hello-world.service
