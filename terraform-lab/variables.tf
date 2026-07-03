@@ -27,3 +27,10 @@ variable "domain_name" {
   type        = string
   default     = "workorn.com"
 }
+
+variable "db_password" {
+  description = "RDS master password"
+  type        = string
+  sensitive   = true
+  default     = "postgres"
+}

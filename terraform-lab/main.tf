@@ -120,3 +120,14 @@ resource "aws_eip" "app_eip" {
     Name = "Rails-Prod-EIP"
   }
 }
+
+# 8. RDS Module
+module "rds" {
+  source = "./modules/rds"
+
+  name_prefix      = "rails-lab"
+  vpc_id           = data.aws_vpc.default.id
+  subnet_ids       = data.aws_subnets.default.ids
+  web_server_sg_id = module.my_web_server.security_group_id
+  db_password      = var.db_password
+}

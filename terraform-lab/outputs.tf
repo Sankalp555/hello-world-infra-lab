@@ -13,6 +13,11 @@ output "alb_dns_name" {
   value       = module.alb.alb_dns_name
 }
 
+output "rds_endpoint" {
+  description = "The connection endpoint for the RDS instance"
+  value       = module.rds.db_instance_endpoint
+}
+
 output "name_servers" {
   description = "The name servers for the Hosted Zone"
   value       = module.dns.name_servers
