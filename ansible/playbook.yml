@@ -4,7 +4,7 @@
   become: yes
 
   vars:
-    database_host: hello-world-db.cro0uie2qyi3.ap-south-1.rds.amazonaws.com
+    database_host: rails-lab-db.cro0uie2qyi3.ap-south-1.rds.amazonaws.com
     database_name: hello_world_production
     database_username: postgres
     database_password: postgres
