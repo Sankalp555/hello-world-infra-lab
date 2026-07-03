@@ -2,6 +2,13 @@
 - name: Bootstrap Rails Production Server
   hosts: web_servers
   become: yes
+
+  vars:
+    database_host: hello-world-db.cro0uie2qyi3.ap-south-1.rds.amazonaws.com
+    database_name: hello_world_production
+    database_username: postgres
+    database_password: postgres
+
   tasks:
     - name: Create 2GB Swap File
       shell: |
@@ -23,8 +30,7 @@
           - git
           - curl
           - nginx
-          - postgresql
-          - postgresql-contrib
+          - postgresql-client
           - libpq-dev
           - nodejs
           - npm
@@ -42,12 +48,14 @@
           - bison
           - pkg-config
           - libffi-dev
-          - python3-psycopg2
         state: present
 
-    # RVM Installation Logic
     - name: Import RVM GPG keys
-      shell: gpg --keyserver hkp://keyserver.ubuntu.com --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3 7D2BAF1CF37B13E2069D6956105BD0E739499BDB
+      shell: >
+        gpg --keyserver hkp://keyserver.ubuntu.com
+        --recv-keys
+        409B6B1796C275462A1703113804BB82D39DC0E3
+        7D2BAF1CF37B13E2069D6956105BD0E739499BDB
       args:
         creates: /home/ubuntu/.gnupg/pubring.kbx
       become_user: ubuntu
@@ -72,34 +80,11 @@
         state: directory
         owner: ubuntu
         group: ubuntu
-        mode: '0755'
-
-    - name: Create PostgreSQL user
-      become: yes
-      become_user: postgres
-      postgresql_user:
-        name: hello_world
-        password: "hello_world_123"
-        role_attr_flags: NOSUPERUSER,CREATEDB
-
-    - name: Create PostgreSQL database
-      become: yes
-      become_user: postgres
-      postgresql_db:
-        name: hello_world_production
-        owner: hello_world
-
-    - name: Configure PostgreSQL for MD5 authentication
-      lineinfile:
-        path: /etc/postgresql/16/main/pg_hba.conf
-        regexp: '^local\s+all\s+all\s+peer'
-        line: 'local   all             all                                     md5'
-        backrefs: yes
-      notify: Restart Postgres
+        mode: "0755"
 
     - name: Clone the repository
       git:
-        repo: 'https://github.com/Sankalp555/hello-world-infra-lab.git'
+        repo: "https://github.com/Sankalp555/hello-world-infra-lab.git"
         dest: /home/ubuntu/hello-world-infra-lab
         version: main
         force: yes
@@ -108,14 +93,19 @@
     - name: Create .env.production file
       copy:
         content: |
-          HELLO_WORLD_DATABASE_PASSWORD="hello_world_123"
+          DATABASE_HOST="{{ database_host }}"
+          DATABASE_NAME="{{ database_name }}"
+          DATABASE_USERNAME="{{ database_username }}"
+          HELLO_WORLD_DATABASE_PASSWORD="{{ database_password }}"
+
           RAILS_ENV="production"
           RAILS_SERVE_STATIC_FILES="true"
+
           SECRET_KEY_BASE="489eeb8eee1b0292460448f56c54fbc5771a076caf19de1bf91ab7d4d93d1460788cf8029573b2d64b39ea0866b1026e906de222e97dd866ea4230ec1d6a4adf"
         dest: /home/ubuntu/hello-world-infra-lab/.env.production
         owner: ubuntu
         group: ubuntu
-        mode: '0600'
+        mode: "0600"
 
     - name: Setup Nginx reverse proxy
       copy:
@@ -123,6 +113,7 @@
           server {
               listen 80;
               server_name _;
+
               location / {
                   proxy_pass http://localhost:3000;
                   proxy_set_header Host $host;
@@ -139,16 +130,17 @@
         content: |
           [Unit]
           Description=Rails Hello World Production Lab
-          After=network.target postgresql.service
+          After=network.target
+
           [Service]
           Type=simple
           User=ubuntu
           Group=ubuntu
           WorkingDirectory=/home/ubuntu/hello-world-infra-lab
-          # Replace the hardcoded Environment= lines with this:
           EnvironmentFile=/home/ubuntu/hello-world-infra-lab/.env.production
           ExecStart=/home/ubuntu/.rvm/bin/rvm 3.3.4 do bundle exec puma -C config/puma.rb
           Restart=always
+
           [Install]
           WantedBy=multi-user.target
         dest: /etc/systemd/system/hello-world.service
@@ -166,8 +158,3 @@
         state: restarted
         enabled: yes
         daemon_reload: yes
-
-    - name: Restart Postgres
-      service:
-        name: postgresql
-        state: restarted
