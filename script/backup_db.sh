@@ -22,7 +22,8 @@ fi
 
 # 4. Perform backup using pg_dump
 echo "Creating backup: ${BACKUP_FILE}"
-PGPASSWORD="${HELLO_WORLD_DATABASE_PASSWORD}" pg_dump -h localhost -U hello_world "$DATABASE_NAME" > "$BACKUP_FILE"
+# PGPASSWORD="${HELLO_WORLD_DATABASE_PASSWORD}" pg_dump -h localhost -U hello_world "$DATABASE_NAME" > "$BACKUP_FILE"
+PGPASSWORD="${HELLO_WORLD_DATABASE_PASSWORD}" pg_dump -h "${DATABASE_HOST}" -U "${DATABASE_USERNAME}" "${DATABASE_NAME}" > "$BACKUP_FILE"
 
 echo "Backup completed successfully."
 
