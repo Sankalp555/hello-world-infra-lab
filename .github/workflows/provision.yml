@@ -51,8 +51,9 @@ jobs:
       - name: Install Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y pipx
-          pipx inject ansible-core boto3 botocore
+          sudo apt-get install -y python3-pip
+          python3 -m pip install --user boto3 botocore ansible --break-system-packages
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
 
       - name: Wait for instances to be running
         run: sleep 60
