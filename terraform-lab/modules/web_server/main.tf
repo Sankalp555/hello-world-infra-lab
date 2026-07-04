@@ -1,6 +1,7 @@
 resource "aws_security_group" "this" {
   name        = var.sg_name
   description = "Security group for web server"
+  vpc_id      = var.vpc_id
 
   # HTTP from ALB or anywhere
   ingress {
@@ -39,26 +40,54 @@ resource "aws_security_group" "this" {
   }
 }
 
-resource "aws_instance" "this" {
-  ami           = var.ami_id
+resource "aws_launch_template" "this" {
+  name_prefix   = "${var.server_name}-lt-"
+  image_id      = var.ami_id
   instance_type = var.instance_type
   key_name      = var.key_name
 
-  iam_instance_profile   = var.iam_instance_profile
-  vpc_security_group_ids = [aws_security_group.this.id]
+  iam_instance_profile {
+    name = var.iam_instance_profile
+  }
 
-  user_data_replace_on_change = true
+  network_interfaces {
+    associate_public_ip_address = true
+    security_groups             = [aws_security_group.this.id]
+  }
 
-  user_data = <<-EOF
+  user_data = base64encode(<<-EOF
               #!/bin/bash
               apt-get update -y
               apt-get install -y nginx
               systemctl start nginx
               systemctl enable nginx
-              echo "<h1>Modularized Rails Server</h1>" > /var/www/html/index.html
+              echo "<h1>High Availability Rails Server</h1>" > /var/www/html/index.html
               EOF
+  )
 
-  tags = {
-    Name = var.server_name
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+resource "aws_autoscaling_group" "this" {
+  name                = "${var.server_name}-asg"
+  vpc_zone_identifier = var.subnet_ids
+  target_group_arns   = [var.target_group_arn]
+  health_check_type   = "ELB"
+
+  min_size         = 1
+  max_size         = 3
+  desired_capacity = 2
+
+  launch_template {
+    id      = aws_launch_template.this.id
+    version = "$Latest"
+  }
+
+  tag {
+    key                 = "Name"
+    value               = var.server_name
+    propagate_at_launch = true
   }
 }

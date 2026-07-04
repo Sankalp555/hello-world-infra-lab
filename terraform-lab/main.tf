@@ -66,7 +66,7 @@ module "alb" {
   certificate_arn = module.dns.certificate_arn
 }
 
-# 4. Web Server Module (Compute)
+# 4. Web Server Module (Compute - High Availability)
 module "my_web_server" {
   source = "./modules/web_server"
 
@@ -77,16 +77,12 @@ module "my_web_server" {
   sg_name               = var.sg_name
   iam_instance_profile  = module.iam.instance_profile_name
   alb_security_group_id = module.alb.alb_security_group_id
+  vpc_id                = data.aws_vpc.default.id
+  subnet_ids            = data.aws_subnets.default.ids
+  target_group_arn      = module.alb.target_group_arn
 }
 
-# 5. Target Group Attachment (Connecting ALB to EC2)
-resource "aws_lb_target_group_attachment" "this" {
-  target_group_arn = module.alb.target_group_arn
-  target_id        = module.my_web_server.instance_id
-  port             = 80
-}
-
-# 6. Route 53 Records (Identity pointing to Front Door)
+# 5. Route 53 Records (Identity pointing to Front Door)
 resource "aws_route53_record" "root" {
   zone_id = module.dns.zone_id
   name    = var.domain_name
@@ -111,17 +107,7 @@ resource "aws_route53_record" "www" {
   }
 }
 
-# 7. Elastic IP (For Management Access)
-resource "aws_eip" "app_eip" {
-  instance = module.my_web_server.instance_id
-  domain   = "vpc"
-
-  tags = {
-    Name = "Rails-Prod-EIP"
-  }
-}
-
-# 8. RDS Module
+# 6. RDS Module
 module "rds" {
   source = "./modules/rds"
 

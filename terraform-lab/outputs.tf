@@ -1,11 +1,11 @@
 output "instance_id" {
-  description = "ID of the EC2 instance"
-  value       = module.my_web_server.instance_id
+  description = "ID of the EC2 instance (Deprecated for ASG)"
+  value       = "ASG Managed"
 }
 
 output "instance_public_ip" {
-  description = "The fixed Elastic IP address"
-  value       = aws_eip.app_eip.public_ip
+  description = "The fixed Elastic IP address (Deprecated for ASG)"
+  value       = "ALB Managed"
 }
 
 output "alb_dns_name" {

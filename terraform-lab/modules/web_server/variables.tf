@@ -36,3 +36,18 @@ variable "alb_security_group_id" {
   type        = string
   default     = ""
 }
+
+variable "vpc_id" {
+  description = "The VPC ID"
+  type        = string
+}
+
+variable "subnet_ids" {
+  description = "The subnet IDs for the ASG"
+  type        = list(string)
+}
+
+variable "target_group_arn" {
+  description = "The ARN of the ALB target group"
+  type        = string
+}
