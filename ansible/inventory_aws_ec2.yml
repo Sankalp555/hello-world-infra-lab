@@ -5,7 +5,7 @@ filters:
   instance-state-name: [running]
   tag:Name: Rails-Prod-Lab-V2
 hostnames:
-  - public-ip-address
+  - instance-id
 compose:
   ansible_host: public_ip_address
   ansible_user: "'ubuntu'"
