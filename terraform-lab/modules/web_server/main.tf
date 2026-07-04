@@ -50,6 +50,15 @@ resource "aws_launch_template" "this" {
     name = var.iam_instance_profile
   }
 
+  block_device_mappings {
+    device_name = "/dev/sda1"
+
+    ebs {
+      volume_size = 20
+      volume_type = "gp3"
+    }
+  }
+
   network_interfaces {
     associate_public_ip_address = true
     security_groups             = [aws_security_group.this.id]
@@ -89,5 +98,12 @@ resource "aws_autoscaling_group" "this" {
     key                 = "Name"
     value               = var.server_name
     propagate_at_launch = true
+  }
+
+  instance_refresh {
+    strategy = "Rolling"
+    preferences {
+      min_healthy_percentage = 50
+    }
   }
 }
