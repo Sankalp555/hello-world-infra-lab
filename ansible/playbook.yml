@@ -83,12 +83,18 @@
         mode: "0755"
 
     - name: Clone the repository
+      # This task ensures the latest code is on every server in the ASG
       git:
         repo: "https://github.com/Sankalp555/hello-world-infra-lab.git"
         dest: /home/ubuntu/hello-world-infra-lab
         version: main
         force: yes
       become_user: ubuntu
+
+    - name: Remove default Nginx index page
+      file:
+        path: /var/www/html/index.html
+        state: absent
 
     - name: Create .env.production file
       copy:
