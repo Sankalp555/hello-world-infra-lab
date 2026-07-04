@@ -95,9 +95,13 @@ jobs:
           sudo apt-get install -y python3-pip ansible
           pip3 install boto3 botocore --break-system-packages
 
+      - name: Wait for instances to be ready
+        run: sleep 30
+
       - name: Run Orchestrated Deployment
         run: |
           export ANSIBLE_HOST_KEY_CHECKING=False
+          # Use --limit to ensure we fail if no hosts are found
           ansible web_servers -i ansible/inventory_aws_ec2.yml \
           -u ${{ secrets.EC2_USER }} \
           -m shell -a "cd ~/hello-world-infra-lab && ./script/deploy.sh" \
