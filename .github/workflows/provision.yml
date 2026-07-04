@@ -57,6 +57,10 @@ jobs:
       - name: Wait for instances to be running
         run: sleep 60
 
+      - name: Debug Inventory
+        run: |
+          ansible-inventory -i ansible/inventory_aws_ec2.yml --list
+
       - name: Run Playbook
         run: |
           export ANSIBLE_HOST_KEY_CHECKING=False
