@@ -83,7 +83,8 @@ resource "aws_autoscaling_group" "this" {
   name                = "${var.server_name}-asg"
   vpc_zone_identifier = var.subnet_ids
   target_group_arns   = [var.target_group_arn]
-  health_check_type   = "ELB"
+  health_check_type   = "EC2" # Changed from ELB to EC2 to stop the killing loop
+  health_check_grace_period = 600
 
   min_size         = 1
   max_size         = 3

@@ -91,11 +91,6 @@
         force: yes
       become_user: ubuntu
 
-    - name: Remove default Nginx index page
-      file:
-        path: /var/www/html/index.html
-        state: absent
-
     - name: Create .env.production file
       copy:
         content: |
@@ -151,6 +146,12 @@
           WantedBy=multi-user.target
         dest: /etc/systemd/system/hello-world.service
       notify: Restart Rails
+
+    - name: Remove default Nginx index page
+      # We do this at the very end to ensure the proxy is ready first
+      file:
+        path: /var/www/html/index.html
+        state: absent
 
   handlers:
     - name: Restart Nginx
