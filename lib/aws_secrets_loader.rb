@@ -9,7 +9,7 @@ class AwsSecretsLoader
 
     begin
       # 1. Load Database Secrets
-      db_secret_name = "production/rails-app/db-creds"
+      db_secret_name = "production/rails-app/db-creds-v2"
       db_resp = client.get_secret_value(secret_id: db_secret_name)
       db_secrets = JSON.parse(db_resp.secret_string)
 
@@ -20,7 +20,7 @@ class AwsSecretsLoader
       ENV["DATABASE_NAME"] = db_secrets["dbname"] if db_secrets["dbname"]
 
       # 2. Load App Secrets
-      app_secret_name = "production/rails-app/app-secrets"
+      app_secret_name = "production/rails-app/app-secrets-v2"
       app_resp = client.get_secret_value(secret_id: app_secret_name)
       app_secrets = JSON.parse(app_resp.secret_string)
 

@@ -34,3 +34,10 @@ variable "db_password" {
   sensitive   = true
   default     = "postgres"
 }
+
+variable "secret_key_base" {
+  description = "Rails secret key base"
+  type        = string
+  sensitive   = true
+  default     = "489eeb8eee1b0292460448f56c54fbc5771a076caf19de1bf91ab7d4d93d1460788cf8029573b2d64b39ea0866b1026e906de222e97dd866ea4230ec1d6a4adf"
+}

@@ -45,10 +45,14 @@ data "aws_ami" "ubuntu" {
   owners = ["099720109477"] # Canonical
 }
 
+# Data source for Account ID
+data "aws_caller_identity" "current" {}
+
 # 1. IAM Module
 module "iam" {
   source      = "./modules/iam"
   name_prefix = "rails-lab"
+  account_id  = data.aws_caller_identity.current.account_id
 }
 
 # 2. DNS and SSL Module (Foundation for Security)
@@ -116,4 +120,14 @@ module "rds" {
   subnet_ids       = data.aws_subnets.default.ids
   web_server_sg_id = module.my_web_server.security_group_id
   db_password      = var.db_password
+}
+
+# 7. Secrets Module
+module "secrets" {
+  source = "./modules/secrets"
+
+  name_prefix     = "rails-lab"
+  db_password     = var.db_password
+  secret_key_base = var.secret_key_base
+  rds_endpoint    = split(":", module.rds.rds_endpoint)[0]
 }

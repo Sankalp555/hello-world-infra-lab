@@ -21,7 +21,7 @@ require 'aws-sdk-secretsmanager'
 require 'json'
 begin
   client = Aws::SecretsManager::Client.new(region: 'ap-south-1')
-  resp = client.get_secret_value(secret_id: 'production/rails-app/db-creds')
+  resp = client.get_secret_value(secret_id: 'production/rails-app/db-creds-v2')
   puts resp.secret_string
 rescue => e
   STDERR.puts \"Error: #{e.message}\"
