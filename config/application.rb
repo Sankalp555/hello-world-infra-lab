@@ -18,6 +18,10 @@ require "action_cable/engine"
 # you've limited to :test, :development, or :production.
 Bundler.require(*Rails.groups)
 
+# Load secrets from AWS Secrets Manager in production
+require_relative "../lib/aws_secrets_loader"
+AwsSecretsLoader.load
+
 module HelloWorld
   class Application < Rails::Application
     # Initialize configuration defaults for originally generated Rails version.

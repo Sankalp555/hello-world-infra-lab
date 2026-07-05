@@ -31,10 +31,9 @@ echo "Taking pre-deployment backup..."
 echo "Installing gems..."
 $RVM_DO bundle install
 
-# 7. Database migrations (Direct Injection Method)
+# 7. Database migrations
 echo "Running migrations..."
-# We use 'env' to pass the variables directly into the RVM-wrapped command
-$RVM_DO env RAILS_ENV=production HELLO_WORLD_DATABASE_PASSWORD="$HELLO_WORLD_DATABASE_PASSWORD" bundle exec rails db:migrate
+$RVM_DO env RAILS_ENV=production bundle exec rails db:migrate
 
 # 8. Precompile assets
 echo "Precompiling assets..."

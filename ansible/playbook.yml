@@ -4,10 +4,8 @@
   become: yes
 
   vars:
-    database_host: rails-lab-db.cro0uie2qyi3.ap-south-1.rds.amazonaws.com
+    # Non-sensitive configuration
     database_name: hello_world_production
-    database_username: postgres
-    database_password: postgres
 
   tasks:
     - name: Create 2GB Swap File
@@ -91,18 +89,20 @@
         force: yes
       become_user: ubuntu
 
+    - name: Install dependencies
+      shell: /home/ubuntu/.rvm/bin/rvm 3.3.4 do bundle install
+      args:
+        chdir: /home/ubuntu/hello-world-infra-lab
+      become_user: ubuntu
+
     - name: Create .env.production file
       copy:
         content: |
-          DATABASE_HOST="{{ database_host }}"
+          # Non-sensitive configuration only
+          # Secrets are now fetched from AWS Secrets Manager at runtime
           DATABASE_NAME="{{ database_name }}"
-          DATABASE_USERNAME="{{ database_username }}"
-          HELLO_WORLD_DATABASE_PASSWORD="{{ database_password }}"
-
           RAILS_ENV="production"
           RAILS_SERVE_STATIC_FILES="true"
-
-          SECRET_KEY_BASE="489eeb8eee1b0292460448f56c54fbc5771a076caf19de1bf91ab7d4d93d1460788cf8029573b2d64b39ea0866b1026e906de222e97dd866ea4230ec1d6a4adf"
         dest: /home/ubuntu/hello-world-infra-lab/.env.production
         owner: ubuntu
         group: ubuntu

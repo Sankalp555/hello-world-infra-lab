@@ -14,15 +14,27 @@ echo "--- Starting Database Backup ---"
 # 2. Ensure backup directory exists
 mkdir -p "$BACKUP_PATH"
 
-# 3. Load environment variables for DB password
-if [ -f "${APP_PATH}/.env.production" ]; then
-  echo "Loading environment variables..."
-  export $(grep -v '^#' "${APP_PATH}/.env.production" | xargs)
-fi
+# 3. Fetch secrets from AWS Secrets Manager using Ruby (since we have the gem)
+echo "Fetching database credentials from AWS Secrets Manager..."
+DB_SECRETS=$($RVM_DO ruby -e "
+require 'aws-sdk-secretsmanager'
+require 'json'
+begin
+  client = Aws::SecretsManager::Client.new(region: 'ap-south-1')
+  resp = client.get_secret_value(secret_id: 'production/rails-app/db-creds')
+  puts resp.secret_string
+rescue => e
+  STDERR.puts \"Error: #{e.message}\"
+  exit 1
+end
+")
+
+DATABASE_HOST=$(echo $DB_SECRETS | $RVM_DO ruby -e "require 'json'; puts JSON.parse(STDIN.read)['host']")
+DATABASE_USERNAME=$(echo $DB_SECRETS | $RVM_DO ruby -e "require 'json'; puts JSON.parse(STDIN.read)['username']")
+HELLO_WORLD_DATABASE_PASSWORD=$(echo $DB_SECRETS | $RVM_DO ruby -e "require 'json'; puts JSON.parse(STDIN.read)['password']")
 
 # 4. Perform backup using pg_dump
 echo "Creating backup: ${BACKUP_FILE}"
-# PGPASSWORD="${HELLO_WORLD_DATABASE_PASSWORD}" pg_dump -h localhost -U hello_world "$DATABASE_NAME" > "$BACKUP_FILE"
 PGPASSWORD="${HELLO_WORLD_DATABASE_PASSWORD}" pg_dump -h "${DATABASE_HOST}" -U "${DATABASE_USERNAME}" "${DATABASE_NAME}" > "$BACKUP_FILE"
 
 echo "Backup completed successfully."
