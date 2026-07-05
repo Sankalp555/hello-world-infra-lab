@@ -129,5 +129,5 @@ module "secrets" {
   name_prefix     = "rails-lab"
   db_password     = var.db_password
   secret_key_base = var.secret_key_base
-  rds_endpoint    = split(":", module.rds.rds_endpoint)[0]
+  rds_endpoint    = split(":", module.rds.db_instance_endpoint)[0]
 }
