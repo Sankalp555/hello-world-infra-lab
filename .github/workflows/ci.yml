@@ -103,5 +103,5 @@ jobs:
           # We tell Ansible to run a simple Docker command on every server
           ansible web_servers -i ansible/inventory_aws_ec2.yml \
           -u ubuntu \
-          -m shell -a "aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin $ECR_REGISTRY && docker pull $ECR_REGISTRY/$ECR_REPOSITORY:latest && docker stop rails-app || true && docker rm rails-app || true && docker run -d --name rails-app -p 80:3000 --restart always -e RAILS_ENV=production $ECR_REGISTRY/$ECR_REPOSITORY:latest" \
+          -m shell -a "aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin $ECR_REGISTRY && docker pull $ECR_REGISTRY/$ECR_REPOSITORY:latest && (docker stop rails-app || true) && (docker rm rails-app || true) && docker run -d --name rails-app -p 80:3000 --restart always -e RAILS_ENV=production $ECR_REGISTRY/$ECR_REPOSITORY:latest" \
           --private-key ~/.ssh/id_rsa
