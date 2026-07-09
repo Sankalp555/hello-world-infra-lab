@@ -1,4 +1,5 @@
 ---
+# Phase 4: Docker-based configuration
 - name: Bootstrap Rails Production Server (Docker Edition)
   hosts: web_servers
   become: yes
