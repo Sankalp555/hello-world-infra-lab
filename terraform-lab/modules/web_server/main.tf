@@ -66,11 +66,30 @@ resource "aws_launch_template" "this" {
 
   user_data = base64encode(<<-EOF
               #!/bin/bash
+              # 1. Update and install basic tools
               apt-get update -y
-              apt-get install -y nginx
-              systemctl start nginx
-              systemctl enable nginx
-              echo "<h1>High Availability Rails Server</h1>" > /var/www/html/index.html
+              apt-get install -y docker.io unzip curl
+
+              # 2. Install AWS CLI v2
+              curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+              unzip -o awscliv2.zip
+              ./aws/install
+
+              # 3. Start Docker
+              systemctl start docker
+              systemctl enable docker
+              usermod -aG docker ubuntu
+
+              # 4. Login to ECR and Pull Image
+              # We use the dynamic account ID and region
+              aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin 012751250085.dkr.ecr.ap-south-1.amazonaws.com
+
+              # 5. Run the container
+              # We stop any existing container first (though on a fresh boot there won't be any)
+              docker pull 012751250085.dkr.ecr.ap-south-1.amazonaws.com/hello-world-app:latest
+              docker run -d --name rails-app -p 80:3000 --restart always \
+                -e RAILS_ENV=production \
+                012751250085.dkr.ecr.ap-south-1.amazonaws.com/hello-world-app:latest
               EOF
   )
 

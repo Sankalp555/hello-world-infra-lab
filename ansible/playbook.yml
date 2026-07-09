@@ -1,11 +1,7 @@
 ---
-- name: Bootstrap Rails Production Server
+- name: Bootstrap Rails Production Server (Docker Edition)
   hosts: web_servers
   become: yes
-
-  vars:
-    # Non-sensitive configuration
-    database_name: hello_world_production
 
   tasks:
     - name: Create 2GB Swap File
@@ -22,146 +18,68 @@
       apt:
         update_cache: yes
 
-    - name: Install basic packages
+    - name: Install Docker and AWS CLI dependencies
       apt:
         name:
-          - git
+          - docker.io
+          - unzip
           - curl
-          - nginx
-          - postgresql-client
-          - libpq-dev
-          - nodejs
-          - npm
-          - acl
-          - gawk
-          - libreadline6-dev
-          - libyaml-dev
-          - libsqlite3-dev
-          - sqlite3
-          - autoconf
-          - libgdbm-dev
-          - libncurses5-dev
-          - automake
-          - libtool
-          - bison
-          - pkg-config
-          - libffi-dev
         state: present
 
-    - name: Import RVM GPG keys
-      shell: >
-        gpg --keyserver hkp://keyserver.ubuntu.com
-        --recv-keys
-        409B6B1796C275462A1703113804BB82D39DC0E3
-        7D2BAF1CF37B13E2069D6956105BD0E739499BDB
-      args:
-        creates: /home/ubuntu/.gnupg/pubring.kbx
-      become_user: ubuntu
+    - name: Ensure Docker is started and enabled
+      service:
+        name: docker
+        state: started
+        enabled: yes
 
-    - name: Install RVM
-      shell: curl -sSL https://get.rvm.io | bash -s stable
-      args:
-        creates: /home/ubuntu/.rvm/bin/rvm
-      become_user: ubuntu
+    - name: Add 'ubuntu' user to docker group
+      user:
+        name: ubuntu
+        groups: docker
+        append: yes
 
-    - name: Install Ruby 3.3.4 via RVM
-      shell: /home/ubuntu/.rvm/bin/rvm install 3.3.4 --default
-      args:
-        creates: /home/ubuntu/.rvm/rubies/ruby-3.3.4
-      become_user: ubuntu
-      async: 1800
-      poll: 30
+    - name: Check if AWS CLI is installed
+      command: aws --version
+      register: aws_cli_check
+      ignore_errors: yes
 
-    - name: Create application directory
+    - name: Install AWS CLI v2
+      shell: |
+        curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+        unzip -o awscliv2.zip
+        sudo ./aws/install --update
+        rm -rf awscliv2.zip aws/
+      when: aws_cli_check.rc != 0
+
+    - name: Remove old Ruby/RVM traces (Optional cleanup)
+      file:
+        path: /home/ubuntu/.rvm
+        state: absent
+
+    - name: Remove old application directory (Optional cleanup)
       file:
         path: /home/ubuntu/hello-world-infra-lab
-        state: directory
-        owner: ubuntu
-        group: ubuntu
-        mode: "0755"
+        state: absent
 
-    - name: Clone the repository
-      # This task ensures the latest code is on every server in the ASG
-      git:
-        repo: "https://github.com/Sankalp555/hello-world-infra-lab.git"
-        dest: /home/ubuntu/hello-world-infra-lab
-        version: main
-        force: yes
-      become_user: ubuntu
+    - name: Remove old Systemd service
+      file:
+        path: /etc/systemd/system/hello-world.service
+        state: absent
+      notify: Reload Systemd
 
-    - name: Install dependencies
-      shell: /home/ubuntu/.rvm/bin/rvm 3.3.4 do bundle install
-      args:
-        chdir: /home/ubuntu/hello-world-infra-lab
-      become_user: ubuntu
-
-    - name: Create .env.production file
-      copy:
-        content: |
-          # Non-sensitive configuration only
-          # Secrets are now fetched from AWS Secrets Manager at runtime
-          DATABASE_NAME="{{ database_name }}"
-          RAILS_ENV="production"
-          RAILS_SERVE_STATIC_FILES="true"
-        dest: /home/ubuntu/hello-world-infra-lab/.env.production
-        owner: ubuntu
-        group: ubuntu
-        mode: "0600"
-
-    - name: Setup Nginx reverse proxy
-      copy:
-        content: |
-          server {
-              listen 80;
-              server_name _;
-
-              location / {
-                  proxy_pass http://localhost:3000;
-                  proxy_set_header Host $host;
-                  proxy_set_header X-Real-IP $remote_addr;
-                  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-                  proxy_set_header X-Forwarded-Proto $scheme;
-              }
-          }
-        dest: /etc/nginx/sites-available/default
-      notify: Restart Nginx
-
-    - name: Create Systemd service for Rails
-      copy:
-        content: |
-          [Unit]
-          Description=Rails Hello World Production Lab
-          After=network.target
-
-          [Service]
-          Type=simple
-          User=ubuntu
-          Group=ubuntu
-          WorkingDirectory=/home/ubuntu/hello-world-infra-lab
-          EnvironmentFile=/home/ubuntu/hello-world-infra-lab/.env.production
-          ExecStart=/home/ubuntu/.rvm/bin/rvm 3.3.4 do bundle exec puma -C config/puma.rb
-          Restart=always
-
-          [Install]
-          WantedBy=multi-user.target
-        dest: /etc/systemd/system/hello-world.service
-      notify: Restart Rails
+    - name: Stop and disable Nginx (Docker will handle Port 80)
+      service:
+        name: nginx
+        state: stopped
+        enabled: no
+      ignore_errors: yes
 
     - name: Remove default Nginx index page
-      # We do this at the very end to ensure the proxy is ready first
       file:
         path: /var/www/html/index.html
         state: absent
 
   handlers:
-    - name: Restart Nginx
-      service:
-        name: nginx
-        state: restarted
-
-    - name: Restart Rails
+    - name: Reload Systemd
       systemd:
-        name: hello-world
-        state: restarted
-        enabled: yes
         daemon_reload: yes

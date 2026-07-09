@@ -131,3 +131,9 @@ module "secrets" {
   secret_key_base = var.secret_key_base
   rds_endpoint    = split(":", module.rds.db_instance_endpoint)[0]
 }
+
+# 8. ECR Module (The Warehouse)
+module "ecr" {
+  source    = "./modules/ecr"
+  repo_name = "hello-world-app"
+}

@@ -49,6 +49,12 @@ resource "aws_iam_role_policy_attachment" "secrets_read" {
   policy_arn = aws_iam_policy.secrets_read.arn
 }
 
+# Give the role permission to pull images from ECR
+resource "aws_iam_role_policy_attachment" "ecr_read" {
+  role       = aws_iam_role.this.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
+}
+
 # This is what we actually attach to the EC2 instance
 resource "aws_iam_instance_profile" "this" {
   name = "${var.name_prefix}-profile"
