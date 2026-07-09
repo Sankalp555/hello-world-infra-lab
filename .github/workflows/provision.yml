@@ -66,5 +66,5 @@ jobs:
         run: |
           export ANSIBLE_HOST_KEY_CHECKING=False
           ansible-playbook -i ansible/inventory_aws_ec2.yml ansible/playbook.yml \
-          -u ${{ secrets.EC2_USER }} \
+          -u ubuntu \
           --private-key ~/.ssh/id_rsa

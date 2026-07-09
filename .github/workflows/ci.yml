@@ -51,17 +51,36 @@ jobs:
         run: bundle exec brakeman --no-pager
 
   deploy:
-    name: Deploy to EC2
+    name: Build, Push and Deploy Docker Image
     runs-on: ubuntu-latest
     needs: test
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     env:
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-
+      AWS_REGION: ap-south-1
+      ECR_REPOSITORY: hello-world-app
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, tag, and push image to Amazon ECR
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: latest
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
 
       - name: Setup SSH Key
         run: |
@@ -76,17 +95,13 @@ jobs:
           python3 -m pip install --user boto3 botocore ansible --break-system-packages
           echo "$HOME/.local/bin" >> $GITHUB_PATH
 
-      - name: Wait for instances to be ready
-        run: sleep 30
-
-      - name: Debug Inventory
-        run: |
-          ansible-inventory -i ansible/inventory_aws_ec2.yml --list
-
-      - name: Run Orchestrated Deployment
+      - name: Deploy to EC2 via Ansible
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         run: |
           export ANSIBLE_HOST_KEY_CHECKING=False
+          # We tell Ansible to run a simple Docker command on every server
           ansible web_servers -i ansible/inventory_aws_ec2.yml \
-          -u ${{ secrets.EC2_USER }} \
-          -m shell -a "cd ~/hello-world-infra-lab && ./script/deploy.sh" \
+          -u ubuntu \
+          -m shell -a "aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin $ECR_REGISTRY && docker pull $ECR_REGISTRY/$ECR_REPOSITORY:latest && docker stop rails-app || true && docker rm rails-app || true && docker run -d --name rails-app -p 80:3000 --restart always -e RAILS_ENV=production $ECR_REGISTRY/$ECR_REPOSITORY:latest" \
           --private-key ~/.ssh/id_rsa
